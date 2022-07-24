@@ -2,6 +2,7 @@
 using EmployeeWebApi.Models;
 using EmployeeWebApi.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeWebApi.Controllers
@@ -51,8 +52,7 @@ namespace EmployeeWebApi.Controllers
 
             await _employeeRepository.SaveChangesAsync();
 
-            var createdEmployee =
-                _mapper.Map<EmployeeDto>(await _employeeRepository.GetEmployeeAsync(newEmployee.Id));
+            var createdEmployee = _mapper.Map<EmployeeDto>(await _employeeRepository.GetEmployeeAsync(newEmployee.Id));
 
             return CreatedAtRoute("GetEmployee",
                 new
@@ -72,6 +72,52 @@ namespace EmployeeWebApi.Controllers
             }
 
             _employeeRepository.DeleteEmployee(employeeEntity);
+            await _employeeRepository.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateEmployee(Guid id, EmployeeUpdateDto employeeToUpdate)
+        {
+            var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
+            if (employeeEntity == null)
+            {
+                return NotFound();
+            }
+
+            _mapper.Map(employeeToUpdate, employeeEntity);
+
+            await _employeeRepository.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> PartialUpdateEmployee(Guid id, JsonPatchDocument<EmployeeUpdateDto> patchDocument)
+        {
+            var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
+            if (employeeEntity == null)
+            {
+                return NotFound();
+            }
+
+            var employeeToPatch = _mapper.Map<EmployeeUpdateDto>(employeeEntity);
+
+            patchDocument.ApplyTo(employeeToPatch, ModelState);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!TryValidateModel(employeeToPatch))
+            {
+                return BadRequest(ModelState);
+            }
+
+            _mapper.Map(employeeToPatch, employeeEntity);
             await _employeeRepository.SaveChangesAsync();
 
             return NoContent();

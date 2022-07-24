@@ -8,6 +8,8 @@ namespace EmployeeWebApi.Profiles
         {
             CreateMap<Entities.Employee, Models.EmployeeDto>();
             CreateMap<Models.EmployeeCreateDto, Entities.Employee>();
+            CreateMap<Entities.Employee, Models.EmployeeUpdateDto>();
+            CreateMap<Models.EmployeeUpdateDto, Entities.Employee>();
         }
     }
 }
