@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using EmployeeWebApi.DbContexts;
 using EmployeeWebApi.Services;
+using EmployeeWebApi.Models;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +13,11 @@ builder.Services.AddControllers(options =>
     options.ReturnHttpNotAcceptable = true;
 })
     .AddNewtonsoftJson()
-    .AddXmlDataContractSerializerFormatters();
+    .AddXmlDataContractSerializerFormatters()
+    .AddFluentValidation(options =>
+    {
+        options.RegisterValidatorsFromAssemblyContaining<EmployeeUpdateDto>();
+    }); 
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

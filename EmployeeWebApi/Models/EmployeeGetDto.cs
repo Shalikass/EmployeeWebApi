@@ -1,6 +1,6 @@
 ﻿namespace EmployeeWebApi.Models
 {
-    public class EmployeeDto
+    public class EmployeeGetDto
     {
         public Guid Id { get; set; }
         public string FirstName { get; set; } = string.Empty;

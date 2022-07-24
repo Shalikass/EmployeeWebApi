@@ -23,9 +23,15 @@ namespace EmployeeWebApi.Services
             _context.Employees.Remove(employee);
         }
 
-        public async Task<bool> EmployeeExistsAsync(Guid id)
+        public async Task<bool> EmployeeExistsAsync(Guid? id)
         {
+            if (id == null) return false;
             return await _context.Employees.AnyAsync(e => e.Id == id);
+        }
+
+        public async Task<Employee?> GetCEOAsync()
+        {
+            return await _context.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Role.Name == "CEO");
         }
 
         public async Task<Employee?> GetEmployeeAsync(Guid id)
@@ -52,6 +58,16 @@ namespace EmployeeWebApi.Services
                     || e.LastName.Contains(searchQuery));
             }
             return await collection.Include(e => e.Role).OrderBy(e => e.LastName).ToListAsync();
+        }
+
+        public async Task<Role?> GetRoleAsync(Guid id)
+        {
+            return await _context.Roles.FirstOrDefaultAsync(r => r.Id == id);
+        }
+
+        public async Task<int> GetRoleEmployeeCountAsync(Guid id)
+        {
+            return await _context.Employees.Include(e => e.Role).CountAsync(e => e.Role != null && e.Role.Id == id);
         }
 
         public async Task<bool> SaveChangesAsync()
