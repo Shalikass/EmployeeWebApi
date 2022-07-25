@@ -3,11 +3,17 @@ using EmployeeWebApi.DbContexts;
 using EmployeeWebApi.Services;
 using EmployeeWebApi.Models;
 using FluentValidation.AspNetCore;
+using Serilog;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+builder.Host.UseSerilog();
 
+// Add services to the container.
 builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;

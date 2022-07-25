@@ -21,14 +21,14 @@ namespace EmployeeWebApi.Validators
 
             RuleFor(x => x.BirthDate)
                 .NotNull()
-                .Must(x => x > DateTime.Now.AddYears(-70) 
-                        && x < DateTime.Now.AddYears(-18))
+                .Must(x => x >= DateTime.Today.AddYears(-70).AddDays(1)
+                        && x < DateTime.Today.AddYears(-18).AddDays(1))
                 .WithMessage("Employee age must be between 18 and 70 years old.");
 
             RuleFor(x => x.EmploymentDate)
                 .NotNull()
                 .Must(x => x >= new DateTime(2000,01,01) 
-                        && x < DateTime.Now)
+                        && x < DateTime.Today.AddDays(1))
                 .WithMessage("Employment date must be after 2000-01-01 and before tomorrow.");
 
             RuleFor(x => x.CurrentSalary)
@@ -36,7 +36,7 @@ namespace EmployeeWebApi.Validators
                 .GreaterThan(0);
 
             RuleFor(x => x.RoleId)
-                .NotEmpty();
+                .NotNull();
 
             RuleFor(x => x.HomeAddress)
                 .NotEmpty();

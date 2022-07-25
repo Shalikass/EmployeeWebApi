@@ -12,9 +12,10 @@ namespace EmployeeWebApi.Entities
         public string Name { get; set; }
         public string? Description { get; set; }
 
-        public Role(string name)
+        public Role(string name, string? description)
         {
             Name = name;
+            Description = description;
         }
     }
 }

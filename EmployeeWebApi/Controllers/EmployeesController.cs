@@ -13,13 +13,16 @@ namespace EmployeeWebApi.Controllers
     [ApiController]
     public class EmployeesController : ControllerBase
     {
+        private readonly ILogger<EmployeesController> _logger;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
-        public EmployeesController(IEmployeeRepository employeeRepository, IMapper mapper)
+        public EmployeesController(ILogger<EmployeesController> logger, IEmployeeRepository employeeRepository, IMapper mapper)
         {
+            _logger = logger ??
+                throw new ArgumentNullException(nameof(logger));
             _employeeRepository = employeeRepository ??
                 throw new ArgumentNullException(nameof(employeeRepository));
-            _mapper = mapper ??
+            _mapper = mapper ?? 
                 throw new ArgumentNullException(nameof(mapper));
         }
 
@@ -27,123 +30,170 @@ namespace EmployeeWebApi.Controllers
         public async Task<ActionResult<IEnumerable<EmployeeGetDto>>> GetEmployees(
             string? searchQuery, Guid? bossId, DateTime? birthDateFrom, DateTime? birthDateTo)
         {
-            var employees = await _employeeRepository.GetEmployeesAsync(searchQuery, bossId, birthDateFrom, birthDateTo);
-
-            return Ok(_mapper.Map<IEnumerable<EmployeeGetDto>>(employees));
+            try
+            {
+                var employees = await _employeeRepository.GetEmployeesAsync(searchQuery, bossId, birthDateFrom, birthDateTo);
+                return Ok(_mapper.Map<IEnumerable<EmployeeGetDto>>(employees));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, $"Exception when getting employees.");
+                return StatusCode(500, "A problem occurred while handling your request");
+            }
         }
 
 
         [HttpGet("{id}", Name = "GetEmployee")]
         public async Task<ActionResult<EmployeeGetDto>> GetEmployee(Guid id)
         {
-            var employee = await _employeeRepository.GetEmployeeAsync(id);
-            if (employee == null)
+            try
             {
-                return NotFound();
+                var employee = await _employeeRepository.GetEmployeeAsync(id);
+                if (employee == null)
+                {
+                    return NotFound();
+                }
+                return Ok(_mapper.Map<EmployeeGetDto>(employee));
             }
-            return Ok(_mapper.Map<EmployeeGetDto>(employee));
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, $"Exception when getting employee with id: {id} .");
+                return StatusCode(500, "A problem occurred while handling your request");
+            }
         }
 
         [HttpPost]
         public async Task<ActionResult<EmployeeUpdateDto>> CreateEmployee(
            EmployeeUpdateDto employeeCreate)
         {
-            EmployeeParsers.TransformEmployeeUpdateDto(employeeCreate);
-            var newEmployee = _mapper.Map<Entities.Employee>(employeeCreate);
+            try
+            {
+                EmployeeParsers.TransformEmployeeUpdateDto(employeeCreate);
+                var newEmployee = _mapper.Map<Entities.Employee>(employeeCreate);
 
-            var validationResult = await CustomValidations.CheckCreateConstraints(newEmployee, _employeeRepository);
-            if (validationResult != null)
-                return validationResult;
+                var validationResult = await CustomValidations.CheckCreateConstraints(newEmployee, _employeeRepository);
+                if (validationResult != null)
+                    return validationResult;
 
-            _employeeRepository.AddEmployee(newEmployee);
-            await _employeeRepository.SaveChangesAsync();
+                _employeeRepository.AddEmployee(newEmployee);
+                await _employeeRepository.SaveChangesAsync();
 
-            var createdEmployee = _mapper.Map<EmployeeGetDto>(await _employeeRepository.GetEmployeeAsync(newEmployee.Id));
-            return CreatedAtRoute("GetEmployee",
-                new
-                {
-                    id = createdEmployee.Id
-                }
-                , createdEmployee);
+                var createdEmployee = _mapper.Map<EmployeeGetDto>(await _employeeRepository.GetEmployeeAsync(newEmployee.Id));
+                return CreatedAtRoute("GetEmployee",
+                    new
+                    {
+                        id = createdEmployee.Id
+                    }
+                    , createdEmployee);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, $"Exception when creating employee.");
+                return StatusCode(500, "A problem occurred while handling your request");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteEmployee(Guid id)
         {
-            var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
-            if (employeeEntity == null)
+            try
             {
-                return NotFound();
+                var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
+                if (employeeEntity == null)
+                {
+                    return NotFound();
+                }
+
+                _employeeRepository.DeleteEmployee(employeeEntity);
+                await _employeeRepository.SaveChangesAsync();
+
+                return NoContent();
             }
-
-            _employeeRepository.DeleteEmployee(employeeEntity);
-            await _employeeRepository.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, $"Exception when deleting employee");
+                return StatusCode(500, "A problem occurred while handling your request");
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateEmployee(Guid id, EmployeeUpdateDto employeeToUpdate)
         {
-            EmployeeParsers.TransformEmployeeUpdateDto(employeeToUpdate);
-            var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
-            if (employeeEntity == null)
+            try
             {
-                return NotFound();
+                EmployeeParsers.TransformEmployeeUpdateDto(employeeToUpdate);
+                var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
+                if (employeeEntity == null)
+                {
+                    return NotFound();
+                }
+
+                _mapper.Map(employeeToUpdate, employeeEntity);
+
+                var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
+                if (validationResult != null)
+                    return validationResult;
+
+                await _employeeRepository.SaveChangesAsync();
+
+                return NoContent();
             }
-
-            _mapper.Map(employeeToUpdate, employeeEntity);
-
-            var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
-            if (validationResult != null)
-                return validationResult;
-
-            await _employeeRepository.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex, $"Exception when updating employee with id: {id} .");
+                return StatusCode(500, "A problem occurred while handling your request");
+            }
         }
 
 
         [HttpPatch("{id}")]
         public async Task<ActionResult> PartialUpdateEmployee(Guid id, JsonPatchDocument<EmployeeUpdateDto> patchDocument)
         {
-            var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
-            if (employeeEntity == null)
+            try
             {
-                return NotFound();
+                var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
+                if (employeeEntity == null)
+                {
+                    return NotFound();
+                }
+
+                var employeeToPatch = _mapper.Map<EmployeeUpdateDto>(employeeEntity);
+
+                patchDocument.ApplyTo(employeeToPatch, ModelState);
+
+                EmployeeParsers.TransformEmployeeUpdateDto(employeeToPatch);
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                if (!TryValidateModel(employeeToPatch))
+                {
+                    return BadRequest(ModelState);
+                }
+
+                bool needValidation = (employeeToPatch.RoleId != employeeEntity.RoleId
+                                      || employeeToPatch.BossId == null
+                                      || employeeToPatch.BossId != employeeEntity.BossId);
+
+                _mapper.Map(employeeToPatch, employeeEntity);
+
+                if (needValidation)
+                {
+                    var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
+                    if (validationResult != null)
+                        return validationResult;
+                }
+
+                await _employeeRepository.SaveChangesAsync();
+
+                return NoContent();
             }
-
-            var employeeToPatch = _mapper.Map<EmployeeUpdateDto>(employeeEntity);
-
-            patchDocument.ApplyTo(employeeToPatch, ModelState);
-
-            EmployeeParsers.TransformEmployeeUpdateDto(employeeToPatch);
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                _logger.LogInformation(ex, $"Exception when patching employee with id: {id} .");
+                return StatusCode(500, "A problem occurred while handling your request");
             }
-            if (!TryValidateModel(employeeToPatch))
-            {
-                return BadRequest(ModelState);
-            }
-
-            bool needValidation = (employeeToPatch.RoleId != employeeEntity.RoleId
-                                  || employeeToPatch.BossId == null
-                                  || employeeToPatch.BossId != employeeEntity.BossId);
-
-            _mapper.Map(employeeToPatch, employeeEntity);
-
-            if (needValidation)
-            {
-                var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
-                if (validationResult != null)
-                    return validationResult;
-            }
-
-            await _employeeRepository.SaveChangesAsync();
-
-            return NoContent();
         }
     }
 }

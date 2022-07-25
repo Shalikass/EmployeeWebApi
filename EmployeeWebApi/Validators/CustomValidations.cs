@@ -14,15 +14,15 @@ namespace EmployeeWebApi.Validators
                 return new NotFoundObjectResult($"Role with id \"{employee.RoleId}\" does not exist.");
             }
 
-            if (role.Name == "CEO")
+            if (role.Name == Constants.RoleNameCEO)
             {
                 if (await employeeRepository.GetRoleEmployeeCountAsync(employee.RoleId) > 0)
                 {
-                    return new UnprocessableEntityObjectResult("Only one employee can have CEO role.");
+                    return new UnprocessableEntityObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
                 }
                 if (employee.BossId != null)
                 {
-                    return new UnprocessableEntityObjectResult("Employee with CEO role cannot have a boss.");
+                    return new UnprocessableEntityObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
                 }
             }
             else
@@ -42,15 +42,15 @@ namespace EmployeeWebApi.Validators
             }
 
             var currentCEO = await employeeRepository.GetCEOAsync();
-            if (role.Name == "CEO")
+            if (role.Name == Constants.RoleNameCEO)
             {
                 if (currentCEO != null && employee.Id != currentCEO.Id)
                 {
-                    return new UnprocessableEntityObjectResult("Only one employee can have CEO role.");
+                    return new UnprocessableEntityObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
                 }
                 if (employee.BossId != null)
                 {
-                    return new UnprocessableEntityObjectResult("Employee with CEO role cannot have a boss.");
+                    return new UnprocessableEntityObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
                 }
             }
             else

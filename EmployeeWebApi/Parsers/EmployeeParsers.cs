@@ -9,6 +9,8 @@ namespace EmployeeWebApi.Parsers
             employee.FirstName = employee.FirstName.Trim();
             employee.LastName = employee.LastName.Trim();
             employee.HomeAddress = employee.HomeAddress.Trim();
+            employee.BirthDate = employee.BirthDate.Date;
+            employee.EmploymentDate = employee.EmploymentDate.Date;
         }
     }
 }

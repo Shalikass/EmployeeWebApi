@@ -26,7 +26,7 @@ namespace EmployeeWebApi.Entities
         [Required]
         public Guid RoleId { get; set; }
         [Required]
-        public Role Role { get; set; } = null!;
+        public Role? Role { get; set; }
         public Guid? BossId { get; set; }
 
         public Employee(string firstName, string lastName, DateTime birthDate, DateTime employmentDate, string homeAddress, decimal currentSalary, Guid roleId)
