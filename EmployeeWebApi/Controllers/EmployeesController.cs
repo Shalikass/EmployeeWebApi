@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using EmployeeWebApi.Validators;
+using EmployeeWebApi.Parsers;
 
 namespace EmployeeWebApi.Controllers
 {
@@ -47,6 +48,7 @@ namespace EmployeeWebApi.Controllers
         public async Task<ActionResult<EmployeeUpdateDto>> CreateEmployee(
            EmployeeUpdateDto employeeCreate)
         {
+            EmployeeParsers.TransformEmployeeUpdateDto(employeeCreate);
             var newEmployee = _mapper.Map<Entities.Employee>(employeeCreate);
 
             var validationResult = await CustomValidations.CheckCreateConstraints(newEmployee, _employeeRepository);
@@ -83,6 +85,7 @@ namespace EmployeeWebApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateEmployee(Guid id, EmployeeUpdateDto employeeToUpdate)
         {
+            EmployeeParsers.TransformEmployeeUpdateDto(employeeToUpdate);
             var employeeEntity = await _employeeRepository.GetEmployeeAsync(id);
             if (employeeEntity == null)
             {
@@ -113,6 +116,8 @@ namespace EmployeeWebApi.Controllers
             var employeeToPatch = _mapper.Map<EmployeeUpdateDto>(employeeEntity);
 
             patchDocument.ApplyTo(employeeToPatch, ModelState);
+
+            EmployeeParsers.TransformEmployeeUpdateDto(employeeToPatch);
 
             if (!ModelState.IsValid)
             {

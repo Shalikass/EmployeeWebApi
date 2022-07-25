@@ -8,16 +8,15 @@ namespace EmployeeWebApi.Validators
     {
         public EmployeeValidator()
         {
-            RuleFor(x => x.FirstName)
+            Transform(x => x.FirstName, x => x?.Trim())
                 .NotEmpty()
                 .MaximumLength(50);
-            RuleFor(x => x.LastName)
+            Transform(x => x.LastName, x => x?.Trim())
                 .NotEmpty()
                 .MaximumLength(50);
 
-            RuleFor(x => new { x.FirstName, x.LastName })
-                .NotEmpty()
-                .Must(x => x.FirstName != x.LastName)
+            RuleFor(x => x)
+                .Must(x => x.FirstName?.Trim() != x.LastName?.Trim())
                 .WithMessage("First and last name must be different.");
 
             RuleFor(x => x.BirthDate)
