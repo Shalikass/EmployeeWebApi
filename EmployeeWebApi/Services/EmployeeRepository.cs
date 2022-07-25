@@ -70,6 +70,18 @@ namespace EmployeeWebApi.Services
             return await _context.Employees.Include(e => e.Role).CountAsync(e => e.Role != null && e.Role.Id == id);
         }
 
+        public async Task<decimal> GetRoleEmployeeCurrentSalarySum(Guid roleId)
+        {
+            return await _context.Employees.Include(e => e.Role)
+                                           .Where(e => e.Role != null && e.Role.Id == roleId)
+                                           .SumAsync(e => e.CurrentSalary);
+        }
+
+        public async Task<IEnumerable<Role>> GetRolesAsync()
+        {
+            return await _context.Roles.OrderBy(r => r.Name).ToListAsync();
+        }
+
         public async Task<bool> SaveChangesAsync()
         {
             return (await _context.SaveChangesAsync() >= 0);

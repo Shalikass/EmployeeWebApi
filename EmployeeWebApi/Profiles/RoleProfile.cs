@@ -7,6 +7,7 @@ namespace EmployeeWebApi.Profiles
         public RoleProfile()
         {
             CreateMap<Entities.Role, Models.RoleDto>();
+            CreateMap<Entities.Role, Models.RoleStatisticsGetDto>();
         }
     }
 }

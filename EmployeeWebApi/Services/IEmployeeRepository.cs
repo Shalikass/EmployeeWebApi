@@ -13,8 +13,10 @@ namespace EmployeeWebApi.Services
         Task<bool> SaveChangesAsync();
         void AddEmployee(Employee employee);
         void DeleteEmployee(Employee employee);
+        Task<IEnumerable<Role>> GetRolesAsync();
         Task<Role?> GetRoleAsync(Guid id);
         Task<int> GetRoleEmployeeCountAsync(Guid id);
+        Task<decimal> GetRoleEmployeeCurrentSalarySum(Guid roleId);
 
     }
 }
