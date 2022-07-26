@@ -14,16 +14,19 @@ namespace EmployeeWebApi.Controllers
     public class EmployeesController : ControllerBase
     {
         private readonly ILogger<EmployeesController> _logger;
-        private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
-        public EmployeesController(ILogger<EmployeesController> logger, IEmployeeRepository employeeRepository, IMapper mapper)
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IEmployeeService _employeeService;
+        public EmployeesController(ILogger<EmployeesController> logger, IMapper mapper, IEmployeeRepository employeeRepository, IEmployeeService employeeService)
         {
             _logger = logger ??
                 throw new ArgumentNullException(nameof(logger));
-            _employeeRepository = employeeRepository ??
-                throw new ArgumentNullException(nameof(employeeRepository));
             _mapper = mapper ?? 
                 throw new ArgumentNullException(nameof(mapper));
+            _employeeRepository = employeeRepository ??
+                throw new ArgumentNullException(nameof(employeeRepository));
+            _employeeService = employeeService ??
+                throw new ArgumentNullException(nameof(employeeService));
         }
 
         [HttpGet]
@@ -71,12 +74,17 @@ namespace EmployeeWebApi.Controllers
                 EmployeeParsers.TransformEmployeeUpdateDto(employeeCreate);
                 var newEmployee = _mapper.Map<Entities.Employee>(employeeCreate);
 
-                var validationResult = await CustomValidations.CheckCreateConstraints(newEmployee, _employeeRepository);
-                if (validationResult != null)
-                    return validationResult;
-
-                _employeeRepository.AddEmployee(newEmployee);
-                await _employeeRepository.SaveChangesAsync();
+                var result = await _employeeService.CreateEmployeeAsync(newEmployee);
+                
+                switch(result.ResultCode)
+                {
+                    case ResultCode.NotFound:
+                        return NotFound(result.Message);
+                    case ResultCode.CannotProcess:
+                        return BadRequest(result.Message);
+                    default:
+                        break;
+                }               
 
                 var createdEmployee = _mapper.Map<EmployeeGetDto>(await _employeeRepository.GetEmployeeAsync(newEmployee.Id));
                 return CreatedAtRoute("GetEmployee",
@@ -130,11 +138,17 @@ namespace EmployeeWebApi.Controllers
 
                 _mapper.Map(employeeToUpdate, employeeEntity);
 
-                var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
-                if (validationResult != null)
-                    return validationResult;
+                var result = await _employeeService.UpdateEmployeeAsync(employeeEntity);
 
-                await _employeeRepository.SaveChangesAsync();
+                switch (result.ResultCode)
+                {
+                    case ResultCode.NotFound:
+                        return NotFound(result.Message);
+                    case ResultCode.CannotProcess:
+                        return BadRequest(result.Message);
+                    default:
+                        break;
+                }
 
                 return NoContent();
             }
@@ -180,12 +194,22 @@ namespace EmployeeWebApi.Controllers
 
                 if (needValidation)
                 {
-                    var validationResult = await CustomValidations.CheckUpdateConstraints(employeeEntity, _employeeRepository);
-                    if (validationResult != null)
-                        return validationResult;
-                }
+                    var result = await _employeeService.UpdateEmployeeAsync(employeeEntity);
 
-                await _employeeRepository.SaveChangesAsync();
+                    switch (result.ResultCode)
+                    {
+                        case ResultCode.NotFound:
+                            return NotFound(result.Message);
+                        case ResultCode.CannotProcess:
+                            return BadRequest(result.Message);
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    await _employeeRepository.SaveChangesAsync();
+                }
 
                 return NoContent();
             }

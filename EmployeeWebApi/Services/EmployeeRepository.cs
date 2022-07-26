@@ -54,7 +54,7 @@ namespace EmployeeWebApi.Services
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 searchQuery = searchQuery.Trim();
-                collection = collection.Where(e => e.FirstName.Contains(searchQuery)
+                collection = collection.Where(e => e.FirstName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
                     || e.LastName.Contains(searchQuery));
             }
             return await collection.Include(e => e.Role).OrderBy(e => e.LastName).ToListAsync();

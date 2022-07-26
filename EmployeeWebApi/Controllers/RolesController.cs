@@ -11,16 +11,19 @@ namespace EmployeeWebApi.Controllers
     public class RolesController : ControllerBase
     {
         private readonly ILogger<RolesController> _logger;
-        private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
-        public RolesController(ILogger<RolesController> logger, IEmployeeRepository employeeRepository, IMapper mapper)
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IStatisticsService _statisticsService;
+        public RolesController(ILogger<RolesController> logger, IMapper mapper, IEmployeeRepository employeeRepository, IStatisticsService statisticsService)
         {
             _logger = logger ??
                 throw new ArgumentNullException(nameof(logger));
-            _employeeRepository = employeeRepository ??
-                throw new ArgumentNullException(nameof(employeeRepository));
             _mapper = mapper ??
                 throw new ArgumentNullException(nameof(mapper));
+            _employeeRepository = employeeRepository ??
+                throw new ArgumentNullException(nameof(employeeRepository));
+            _statisticsService = statisticsService ??
+                throw new ArgumentNullException(nameof(statisticsService));
         }
 
         [HttpGet]
@@ -69,13 +72,13 @@ namespace EmployeeWebApi.Controllers
                 {
                     return NotFound();
                 }
-                var employeeCount = await _employeeRepository.GetRoleEmployeeCountAsync(id);
-                var salarySum = await _employeeRepository.GetRoleEmployeeCurrentSalarySum(id);
-                var roleStatistics = _mapper.Map<RoleStatisticsGetDto>(role);
-                roleStatistics.Statistics.EmployeeCount = employeeCount;
-                roleStatistics.Statistics.AverageSalary = (employeeCount == 0) ? 0 : (salarySum / employeeCount);
 
-                return Ok(roleStatistics);
+                var statistics = await _statisticsService.GetRoleStatisticsAsync(role);
+
+                var result = _mapper.Map<RoleWithStatisticsDto>(role);
+                result.Statistics = _mapper.Map<RoleStatisticsDto>(statistics);
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
