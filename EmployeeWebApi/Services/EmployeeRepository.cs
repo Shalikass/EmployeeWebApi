@@ -31,7 +31,7 @@ namespace EmployeeWebApi.Services
 
         public async Task<Employee?> GetCEOAsync()
         {
-            return await _context.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Role.Name == "CEO");
+            return await _context.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Role != null && e.Role.Name == Constants.RoleNameCEO);
         }
 
         public async Task<Employee?> GetEmployeeAsync(Guid id)
