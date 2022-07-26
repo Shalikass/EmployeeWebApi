@@ -11,15 +11,15 @@ namespace EmployeeWebApi.Test
 {
     public class StatisticsServiceTests
     {
-        public Mock<IEmployeeRepository> employeeRepositoryMock;
-        public StatisticsService statisticsService;
-        public Role role;
+        private Mock<IEmployeeRepository> _employeeRepositoryMock;
+        private StatisticsService _statisticsService;
+        private Role _role;
 
         public StatisticsServiceTests()
         {
-            employeeRepositoryMock = new Mock<IEmployeeRepository>();
-            statisticsService = new StatisticsService(employeeRepositoryMock.Object);
-            role = new Role("A", default);
+            _employeeRepositoryMock = new Mock<IEmployeeRepository>();
+            _statisticsService = new StatisticsService(_employeeRepositoryMock.Object);
+            _role = new Role("A", default);
         }
 
         [Theory]
@@ -30,13 +30,13 @@ namespace EmployeeWebApi.Test
         [InlineData(7, 7000.70, 1000.10)]
         public async Task GetRoleStatistics_Statistics_ResultsValid(int employeeCount, decimal salarySum, decimal averageSalary)
         {
-            role.Id = Guid.NewGuid();
-            employeeRepositoryMock.Setup(m => 
+            _role.Id = Guid.NewGuid();
+            _employeeRepositoryMock.Setup(m => 
                 m.GetRoleEmployeeCountAsync(It.IsAny<Guid>())).ReturnsAsync(employeeCount);
-            employeeRepositoryMock.Setup(m => 
+            _employeeRepositoryMock.Setup(m => 
                 m.GetRoleEmployeeCurrentSalarySumAsync(It.IsAny<Guid>())).ReturnsAsync(salarySum);
 
-            var statistics = await statisticsService.GetRoleStatisticsAsync(role);
+            var statistics = await _statisticsService.GetRoleStatisticsAsync(_role);
 
             Assert.True(employeeCount == statistics.EmployeeCount && averageSalary == statistics.AverageSalary);
         }

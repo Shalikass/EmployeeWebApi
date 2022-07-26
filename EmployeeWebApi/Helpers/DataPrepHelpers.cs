@@ -2,9 +2,9 @@
 
 namespace EmployeeWebApi.Parsers
 {
-    public static class EmployeeParsers
+    public static class DataPrepHelpers
     {
-        public static void TransformEmployeeUpdateDto(EmployeeUpdateDto employee)
+        public static void Trim(this EmployeeUpdateDto employee)
         {
             employee.FirstName = employee.FirstName.Trim();
             employee.LastName = employee.LastName.Trim();

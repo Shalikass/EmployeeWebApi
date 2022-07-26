@@ -7,192 +7,189 @@ namespace EmployeeWebApi.Test
 {
     public class EmployeeServiceTests
     {
-        public Mock<IEmployeeRepository> employeeRepositoryMock;
-        public EmployeeService employeeService;
-        Guid ceoRoleId;
-        Employee testEmploee;
-        Employee ceoEmployee;
-        Role testEmployeeRole;
+        private Mock<IEmployeeRepository> _employeeRepositoryMock;
+        private EmployeeService _employeeService;
+        private Employee _testEmployee;
+        private Employee _ceoEmployee;
+        private Role _testEmployeeRole;
 
         public EmployeeServiceTests()
         {
-            employeeRepositoryMock = new Mock<IEmployeeRepository>();
-            employeeRepositoryMock.Setup(m =>
+            _employeeRepositoryMock = new Mock<IEmployeeRepository>();
+            _employeeRepositoryMock.Setup(m =>
+                    m.AddEmployee(It.IsAny<Employee>())).Verifiable();
+            _employeeRepositoryMock.Setup(m =>
                     m.SaveChangesAsync()).Verifiable();
 
-            employeeService = new EmployeeService(employeeRepositoryMock.Object);
-
-            ceoRoleId = Guid.NewGuid();
-            testEmploee = new Employee("A", "A", default, default, "A", default, default);
-            ceoEmployee = new Employee("A", "A", default, default, "A", default, default);
-            ceoEmployee.Id = Guid.NewGuid();
-            ceoEmployee.RoleId = ceoRoleId;
-            ceoEmployee.Role = new Role(Constants.RoleNameCEO, default);
-            testEmployeeRole = new Role("A", default);
-
-            employeeRepositoryMock.Setup(m =>
-                    m.GetRoleAsync(It.IsAny<Guid>())).ReturnsAsync(testEmployeeRole);
-        }
-
-        [Fact]
-        public async Task CreateEmployee_EmployeeBossId_IsRequired_Async()
-        {
-            testEmploee.RoleId = Guid.NewGuid();
-            testEmploee.BossId = null;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = "A" + Constants.RoleNameCEO;                      
-
-            var result = await employeeService.CreateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
-        }
-
-        [Fact]
-        public async Task CreateEmployee_EmployeeBossId_MustExist_Async()
-        {
-            testEmploee.RoleId = Guid.NewGuid();
-            testEmploee.BossId = Guid.NewGuid();
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
-
-            employeeRepositoryMock.Setup(m =>
+            // Boss exists default = true
+            _employeeRepositoryMock.Setup(m =>
                     m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
 
-            var result = await employeeService.CreateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
-            Assert.Equal(ResultCode.Success, result.ResultCode);
 
-            employeeRepositoryMock.Setup(m =>
-                    m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(false);
-            result = await employeeService.CreateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.NotFound, result.ResultCode);
+            // Normal employee defaults
+            _testEmployee = new Employee("A", "A", default, default, "A", default, Guid.NewGuid(), Guid.NewGuid());
+            _testEmployeeRole = new Role("A", default);
+            _testEmployee.Id = Guid.Empty;
+
+            // Normal ceo defaults
+            _ceoEmployee = new Employee("A", "A", default, default, "A", default, null, Guid.NewGuid());
+            _ceoEmployee.Id = Guid.NewGuid();
+            _ceoEmployee.Role = new Role(Constants.RoleNameCEO, default);
+
+            _employeeRepositoryMock.Setup(m =>
+                    m.GetRoleAsync(It.IsAny<Guid>())).ReturnsAsync(_testEmployeeRole);
+
+            _employeeService = new EmployeeService(_employeeRepositoryMock.Object);
         }
 
         [Fact]
-        public async Task CreateEmployee_EmployeeRole_OnlyOneEmployeeCanHaveRoleCeo_Async()
+        public async Task CreateEmployee_AddEmployeeMethod_MustBeInvoked_Async()
         {
-            testEmploee.RoleId = ceoRoleId;
-            testEmploee.BossId = null;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = Constants.RoleNameCEO;
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
 
-            employeeRepositoryMock.Setup(m =>
-                    m.GetRoleEmployeeCountAsync(It.IsAny<Guid>())).ReturnsAsync(1);
-
-            var result = await employeeService.CreateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
-
-            employeeRepositoryMock.Setup(m =>
-                    m.GetRoleEmployeeCountAsync(It.IsAny<Guid>())).ReturnsAsync(0);;
-
-            result = await employeeService.CreateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
-            Assert.Equal(ResultCode.Success, result.ResultCode);
+            _employeeRepositoryMock.Verify(m => m.AddEmployee(It.IsAny<Employee>()));
         }
 
         [Fact]
-        public async Task CreateEmployee_CeoEmployeeBossId_MustBeNull_Async()
+        public async Task CreateEmployee_SaveChangesAsync_MustBeInvoked_Async()
         {
-            testEmploee.RoleId = ceoRoleId;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = Constants.RoleNameCEO;
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
 
-            employeeRepositoryMock.Setup(m =>
-                    m.GetRoleEmployeeCountAsync(It.IsAny<Guid>())).ReturnsAsync(0);
-
-            testEmploee.BossId = Guid.NewGuid();
-            var result = await employeeService.CreateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
-            employeeRepositoryMock.Setup(m =>
-                    m.SaveChangesAsync()).Verifiable();
-
-            testEmploee.BossId = null;
-            result = await employeeService.CreateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.VerifyAll();
-            Assert.Equal(ResultCode.Success, result.ResultCode);
-        }
-
-
-        [Fact]
-        public async Task UpdateEmployee_EmployeeBossId_IsRequired_Async()
-        {
-            testEmploee.RoleId = Guid.NewGuid();
-            testEmploee.BossId = null;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
-
-            var result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
+            _employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
         }
 
         [Fact]
-        public async Task UpdateEmployee_EmployeeBossId_MustExist_Async()
+        public async Task UpdateEmployee_SaveChangesAsync_MustBeInvoked_Async()
         {
-            testEmploee.RoleId = Guid.NewGuid();
-            testEmploee.BossId = Guid.NewGuid();
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
+            _testEmployee.Id = Guid.NewGuid();
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
 
-            employeeRepositoryMock.Setup(m =>
-                    m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(false);
-            var result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.NotFound, result.ResultCode);
-
-            employeeRepositoryMock.Setup(m =>
-                    m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(true);
-            result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
-            Assert.Equal(ResultCode.Success, result.ResultCode);
+            _employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
         }
 
-        [Fact]
-        public async Task UpdateEmployee_EmployeeRole_OnlyOneEmployeeCanHaveRoleCeo_Async()
+        [Theory]
+        [InlineData(true, ResultCode.CannotProcess)]
+        [InlineData(false, ResultCode.Success)]
+        public async Task CreateEmployee_BossId_IsRequired_Async(bool isNull, ResultCode expected)
+        {            
+            _testEmployee.BossId = isNull ? null : Guid.NewGuid();
+            _testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
+
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
+
+        [Theory]
+        [InlineData(true, ResultCode.CannotProcess)]
+        [InlineData(false, ResultCode.Success)]
+        public async Task UpdateEmployee_BossId_IsRequired_Async(bool isNull, ResultCode expected)
         {
-            testEmploee.RoleId = ceoRoleId;
-            testEmploee.BossId = null;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = Constants.RoleNameCEO;
+            _testEmployee.Id = Guid.NewGuid();
+            _testEmployee.BossId = isNull ? null : Guid.NewGuid();
+            _testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
 
-            employeeRepositoryMock.Setup(m =>
-                    m.GetCEOAsync()).ReturnsAsync(ceoEmployee);
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
 
+        [Theory]
+        [InlineData(false, ResultCode.NotFound)]
+        [InlineData(true, ResultCode.Success)]
+        public async Task CreateEmployee_BossId_MustExist_Async(bool exists, ResultCode expected)
+        {
+            _testEmployee.BossId = Guid.NewGuid();
+            _testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
 
-            testEmploee.Id = Guid.NewGuid();
-            var result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
+            _employeeRepositoryMock.Setup(m =>
+                    m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(exists);
 
-            testEmploee.Id = ceoEmployee.Id;
-            result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.Success, result.ResultCode);
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
 
-            testEmploee.Id = Guid.NewGuid();
-            employeeRepositoryMock.Setup(m =>
+        [Theory]
+        [InlineData(false, ResultCode.NotFound)]
+        [InlineData(true, ResultCode.Success)]
+        public async Task UpdateEmployee_BossId_MustExist_Async(bool exists, ResultCode expected)
+        {
+            _testEmployee.Id = Guid.NewGuid();
+            _testEmployee.BossId = Guid.NewGuid();
+            _testEmployeeRole.Name = "A" + Constants.RoleNameCEO;
+
+            _employeeRepositoryMock.Setup(m =>
+                    m.EmployeeExistsAsync(It.IsAny<Guid>())).ReturnsAsync(exists);
+
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
+
+        [Theory]
+        [InlineData(false, ResultCode.CannotProcess)]
+        [InlineData(true, ResultCode.Success)]
+        public async Task CreateCeoEmployee_BossId_MustBeNull_Async(bool isNull, ResultCode expected)
+        {
+            _testEmployeeRole.Name = Constants.RoleNameCEO;
+            _testEmployee.BossId = isNull ? null : Guid.NewGuid();
+
+            _employeeRepositoryMock.Setup(m =>
                     m.GetCEOAsync()).ReturnsAsync((Employee?)null);
-            result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
-            Assert.Equal(ResultCode.Success, result.ResultCode);
+
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
         }
 
-        [Fact]
-        public async Task UpdateEmployee_CeoEmployeeBossId_MustBeNull_Async()
+        [Theory]
+        [InlineData(false, ResultCode.CannotProcess)]
+        [InlineData(true, ResultCode.Success)]
+        public async Task UpdateCeoEmployee_BossId_MustBeNull_Async(bool isNull, ResultCode expected)
         {
-            testEmploee.RoleId = ceoRoleId;
-            testEmployeeRole.Id = testEmploee.RoleId;
-            testEmployeeRole.Name = Constants.RoleNameCEO;
-            testEmploee.Id = ceoEmployee.Id;
+            _testEmployee.Id = _ceoEmployee.Id;
+            _testEmployeeRole.Name = Constants.RoleNameCEO;
+            _testEmployee.BossId = isNull ? null : Guid.NewGuid();
 
-            employeeRepositoryMock.Setup(m =>
-                    m.GetCEOAsync()).ReturnsAsync(ceoEmployee);
+            _employeeRepositoryMock.Setup(m =>
+                    m.GetCEOAsync()).ReturnsAsync(_ceoEmployee);
 
-
-            testEmploee.BossId = Guid.NewGuid();
-            var result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            Assert.Equal(ResultCode.CannotProcess, result.ResultCode);
-
-            testEmploee.BossId = null;
-            result = await employeeService.UpdateEmployeeAsync(testEmploee);
-            employeeRepositoryMock.Verify(m => m.SaveChangesAsync());
-            Assert.Equal(ResultCode.Success, result.ResultCode);
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
         }
+
+        [Theory]
+        [InlineData(true, ResultCode.CannotProcess)]
+        [InlineData(false, ResultCode.Success)]
+        public async Task CreateEmployee_OnlyOneEmployeeCanHaveRoleCeo_Async(bool ceoExists, ResultCode expected)
+        {
+            _testEmployee.BossId = null;
+            _testEmployeeRole.Name = Constants.RoleNameCEO;
+
+            var ceo = ceoExists ? _ceoEmployee : null;
+
+            _employeeRepositoryMock.Setup(m =>
+                    m.GetCEOAsync()).ReturnsAsync(ceo);
+
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
+
+        [Theory]
+        [InlineData(true, ResultCode.CannotProcess)]
+        [InlineData(false, ResultCode.Success)]
+        public async Task UpdateEmployee_OnlyOneEmployeeCanHaveRoleCeo_Async(bool ceoExists, ResultCode expected)
+        {
+            _testEmployee.Id = Guid.NewGuid();
+            _testEmployee.BossId = null;
+            _testEmployeeRole.Name = Constants.RoleNameCEO;
+
+            var ceo = ceoExists ? _ceoEmployee : null;
+
+            _employeeRepositoryMock.Setup(m =>
+                    m.GetCEOAsync()).ReturnsAsync(ceo);
+
+            var result = await _employeeService.UpdateEmployeeAsync(_testEmployee);
+            Assert.Equal(expected, result.ResultCode);
+        }
+
+        
 
     }
 }

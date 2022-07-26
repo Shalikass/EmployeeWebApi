@@ -10,7 +10,7 @@ namespace EmployeeWebApi.Models
         public DateTime EmploymentDate { get; set; }
         public Guid? BossId { get; set; }
         public decimal CurrentSalary { get; set; }
-        public Guid RoleId { get; set; }
         public string HomeAddress { get; set; } = string.Empty;
+        public Guid RoleId { get; set; }
     }
 }

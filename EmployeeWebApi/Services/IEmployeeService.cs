@@ -5,9 +5,7 @@ namespace EmployeeWebApi.Services
 {
     public interface IEmployeeService
     {
-        Task<IResult> CreateEmployeeAsync(Employee employee);
         Task<IResult> UpdateEmployeeAsync(Employee employee);
-              
 
     }
     public interface IResult

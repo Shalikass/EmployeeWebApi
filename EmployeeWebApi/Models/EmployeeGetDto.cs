@@ -9,7 +9,7 @@
         public DateTime EmploymentDate { get; set; }
         public Guid? BossId { get; set; }
         public decimal CurrentSalary { get; set; }
-        public RoleDto Role { get; set; } = new RoleDto();
         public string HomeAddress { get; set; } = string.Empty;
+        public RoleDto Role { get; set; } = new RoleDto();
     }
 }

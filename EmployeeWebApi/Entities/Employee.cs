@@ -22,14 +22,14 @@ namespace EmployeeWebApi.Entities
         public string HomeAddress { get; set; } 
         [Required]
         public decimal CurrentSalary { get; set; }
+        public Guid? BossId { get; set; }
         [ForeignKey("RoleId")]
         [Required]
         public Guid RoleId { get; set; }
         [Required]
         public Role? Role { get; set; }
-        public Guid? BossId { get; set; }
 
-        public Employee(string firstName, string lastName, DateTime birthDate, DateTime employmentDate, string homeAddress, decimal currentSalary, Guid roleId)
+        public Employee(string firstName, string lastName, DateTime birthDate, DateTime employmentDate, string homeAddress, decimal currentSalary, Guid? bossId, Guid roleId)
         {
             FirstName = firstName;
             LastName = lastName;
@@ -37,6 +37,7 @@ namespace EmployeeWebApi.Entities
             EmploymentDate = employmentDate;
             HomeAddress = homeAddress;
             CurrentSalary = currentSalary;
+            BossId = bossId;
             RoleId = roleId;
         }
     }

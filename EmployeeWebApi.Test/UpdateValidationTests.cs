@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace EmployeeWebApi.Test
 {
 
-    //var employeeDto = new EmployeeUpdateDto {FirstName = "First", LastName = "Last", BirthDate = new Date };
     public class UpdateValidationTests : IClassFixture<EmployeeValidatorFixture>
     {
         private readonly EmployeeValidatorFixture _employeeValidatorFixture;
@@ -118,6 +117,5 @@ namespace EmployeeWebApi.Test
             result = _employeeValidatorFixture.employeeValidator.TestValidate(employee);
             result.ShouldNotHaveValidationErrorFor(x => x.EmploymentDate);
         }
-
     }
 }
