@@ -70,7 +70,7 @@ namespace EmployeeWebApi.Services
             return await _context.Employees.Include(e => e.Role).CountAsync(e => e.Role != null && e.Role.Id == id);
         }
 
-        public async Task<decimal> GetRoleEmployeeCurrentSalarySum(Guid roleId)
+        public async Task<decimal> GetRoleEmployeeCurrentSalarySumAsync(Guid roleId)
         {
             return await _context.Employees.Include(e => e.Role)
                                            .Where(e => e.Role != null && e.Role.Id == roleId)

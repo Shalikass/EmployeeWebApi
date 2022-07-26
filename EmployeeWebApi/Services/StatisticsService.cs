@@ -12,7 +12,7 @@ namespace EmployeeWebApi.Services
         public async Task<RoleStatistics> GetRoleStatisticsAsync(Role role)
         {
             var employeeCount = await _employeeRepository.GetRoleEmployeeCountAsync(role.Id);
-            var salarySum = await _employeeRepository.GetRoleEmployeeCurrentSalarySum(role.Id);
+            var salarySum = await _employeeRepository.GetRoleEmployeeCurrentSalarySumAsync(role.Id);
             return new RoleStatistics(
                 employeeCount,
                 employeeCount == 0 ? 0 : (salarySum / employeeCount));

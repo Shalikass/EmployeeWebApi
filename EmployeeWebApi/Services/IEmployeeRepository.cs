@@ -16,7 +16,7 @@ namespace EmployeeWebApi.Services
         Task<IEnumerable<Role>> GetRolesAsync();
         Task<Role?> GetRoleAsync(Guid id);
         Task<int> GetRoleEmployeeCountAsync(Guid id);
-        Task<decimal> GetRoleEmployeeCurrentSalarySum(Guid roleId);
+        Task<decimal> GetRoleEmployeeCurrentSalarySumAsync(Guid roleId);
 
     }
 }
