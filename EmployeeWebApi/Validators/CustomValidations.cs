@@ -18,11 +18,11 @@ namespace EmployeeWebApi.Validators
             {
                 if (await employeeRepository.GetRoleEmployeeCountAsync(employee.RoleId) > 0)
                 {
-                    return new UnprocessableEntityObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
+                    return new BadRequestObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
                 }
                 if (employee.BossId != null)
                 {
-                    return new UnprocessableEntityObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
+                    return new BadRequestObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
                 }
             }
             else
@@ -46,11 +46,11 @@ namespace EmployeeWebApi.Validators
             {
                 if (currentCEO != null && employee.Id != currentCEO.Id)
                 {
-                    return new UnprocessableEntityObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
+                    return new BadRequestObjectResult($"Only one employee can have {Constants.RoleNameCEO} role.");
                 }
                 if (employee.BossId != null)
                 {
-                    return new UnprocessableEntityObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
+                    return new BadRequestObjectResult($"Employee with {Constants.RoleNameCEO} role cannot have a boss.");
                 }
             }
             else
@@ -64,7 +64,7 @@ namespace EmployeeWebApi.Validators
         {
             if (employee.BossId == null)
             {
-                return new NotFoundObjectResult($"Boss id for role for this role cannot be null.");
+                return new BadRequestObjectResult($"Boss id for role for this role cannot be null.");
             }
             else if (!await employeeRepository.EmployeeExistsAsync(employee.BossId))
             {
