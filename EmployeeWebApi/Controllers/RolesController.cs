@@ -3,6 +3,7 @@ using EmployeeWebApi.Models;
 using EmployeeWebApi.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace EmployeeWebApi.Controllers
 {
@@ -15,6 +16,8 @@ namespace EmployeeWebApi.Controllers
         private readonly IMapper _mapper;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IStatisticsService _statisticsService;
+        const int _maxPageSize = 50;
+
         public RolesController(ILogger<RolesController> logger, IMapper mapper, IEmployeeRepository employeeRepository, IStatisticsService statisticsService)
         {
             _logger = logger ??
@@ -28,11 +31,19 @@ namespace EmployeeWebApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RoleDto>>> GetRoles()
+        public async Task<ActionResult<IEnumerable<RoleDto>>> GetRoles(
+            string? searchQuery, int pageNumber = 1, int pageSize = 20)
         {
+            if (pageSize > _maxPageSize)
+            {
+                pageSize = _maxPageSize;
+            }
             try
             {
-                var roles = await _employeeRepository.GetRolesAsync();
+                var (roles, paginationMetadata) = await _employeeRepository.GetRolesAsync(searchQuery, pageNumber, pageSize);
+
+                Response.Headers.Add("X-Pagination",
+                    JsonConvert.SerializeObject(paginationMetadata));
 
                 return Ok(_mapper.Map<IEnumerable<RoleDto>>(roles));
             }

@@ -39,8 +39,7 @@ namespace EmployeeWebApi.Services
             return await _context.Employees.Where(e => e.Id == id).Include(e => e.Role).FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<Employee>> GetEmployeesAsync(
-            string? searchQuery, Guid? bossId, DateTime? birthDateFrom, DateTime? birthDateTo)
+        public async Task<(IEnumerable<Employee>, PaginationMetadata)> GetEmployeesAsync(string? searchQuery, Guid? bossId, DateTime? birthDateFrom, DateTime? birthDateTo, int pageNumber, int pageSize)
         {
             var collection = _context.Employees as IQueryable<Employee>;
 
@@ -57,7 +56,20 @@ namespace EmployeeWebApi.Services
                 collection = collection.Where(e => e.FirstName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
                     || e.LastName.Contains(searchQuery));
             }
-            return await collection.Include(e => e.Role).OrderBy(e => e.LastName).ToListAsync();
+
+            var totalItemCount = await collection.CountAsync();
+
+            var paginationMetadata = new PaginationMetadata(
+                totalItemCount, pageSize, pageNumber);
+
+            var result = await collection.Include(e => e.Role)
+                                                     .OrderBy(e => e.LastName)
+                                                     .ThenBy(e => e.FirstName)
+                                                     .Skip(pageSize * (pageNumber - 1))
+                                                     .Take(pageSize)
+                                                     .ToListAsync();
+
+            return (result, paginationMetadata);
         }
 
         public async Task<Role?> GetRoleAsync(Guid id)
@@ -77,9 +89,28 @@ namespace EmployeeWebApi.Services
                                            .SumAsync(e => e.CurrentSalary);
         }
 
-        public async Task<IEnumerable<Role>> GetRolesAsync()
+        public async Task<(IEnumerable<Role>, PaginationMetadata)> GetRolesAsync(string? searchQuery, int pageNumber, int pageSize)
         {
-            return await _context.Roles.OrderBy(r => r.Name).ToListAsync();
+            var collection = _context.Roles as IQueryable<Role>;
+
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                searchQuery = searchQuery.Trim();
+                collection = collection.Where(r => r.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                    || (r.Description != null && r.Description.Contains(searchQuery)));
+            }
+
+            var totalItemCount = await collection.CountAsync();
+
+            var paginationMetadata = new PaginationMetadata(
+                totalItemCount, pageSize, pageNumber);
+
+            var result = await collection.OrderBy(r => r.Name)
+                                         .Skip(pageSize * (pageNumber - 1))
+                                         .Take(pageSize)
+                                         .ToListAsync();
+
+            return (result, paginationMetadata);
         }
 
         public async Task<bool> SaveChangesAsync()

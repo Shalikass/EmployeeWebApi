@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using EmployeeWebApi.Validators;
 using EmployeeWebApi.Parsers;
+using Newtonsoft.Json;
 
 namespace EmployeeWebApi.Controllers
 {
@@ -18,6 +19,8 @@ namespace EmployeeWebApi.Controllers
         private readonly IMapper _mapper;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IEmployeeService _employeeService;
+        const int maxPageSize = 50;
+
         public EmployeesController(ILogger<EmployeesController> logger, IMapper mapper, IEmployeeRepository employeeRepository, IEmployeeService employeeService)
         {
             _logger = logger ??
@@ -32,11 +35,20 @@ namespace EmployeeWebApi.Controllers
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EmployeeGetDto>>> GetEmployees(
-            string? searchQuery, Guid? bossId, DateTime? birthDateFrom, DateTime? birthDateTo)
+            string? searchQuery, Guid? bossId, DateTime? birthDateFrom, DateTime? birthDateTo, int pageNumber = 1, int pageSize = 20)
         {
+            if (pageSize > maxPageSize)
+            {
+                pageSize = maxPageSize;
+            }
             try
             {
-                var employees = await _employeeRepository.GetEmployeesAsync(searchQuery, bossId, birthDateFrom, birthDateTo);
+                var (employees, paginationMetadata) = await _employeeRepository.GetEmployeesAsync(
+                    searchQuery, bossId, birthDateFrom, birthDateTo, pageNumber, pageSize);
+
+                Response.Headers.Add("X-Pagination",
+                    JsonConvert.SerializeObject(paginationMetadata));
+
                 return Ok(_mapper.Map<IEnumerable<EmployeeGetDto>>(employees));
             }
             catch (Exception ex)
