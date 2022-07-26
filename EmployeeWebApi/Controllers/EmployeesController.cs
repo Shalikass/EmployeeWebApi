@@ -11,6 +11,7 @@ namespace EmployeeWebApi.Controllers
 {
     [Route("api/employees")]
     [ApiController]
+    [Produces("application/json", "application/xml")]
     public class EmployeesController : ControllerBase
     {
         private readonly ILogger<EmployeesController> _logger;

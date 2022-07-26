@@ -8,6 +8,7 @@ namespace EmployeeWebApi.Controllers
 {
     [Route("api/roles")]
     [ApiController]
+    [Produces("application/json", "application/xml")]
     public class RolesController : ControllerBase
     {
         private readonly ILogger<RolesController> _logger;
